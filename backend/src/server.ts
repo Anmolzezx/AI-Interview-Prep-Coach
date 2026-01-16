@@ -2,6 +2,8 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './utils/prisma';
+import authRoutes from './routes/auth.routes';
+import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables
 dotenv.config();
@@ -26,7 +28,9 @@ app.get('/health', (_req: Request, res: Response) => {
     });
 });
 
-// API routes will be added here
+// API Routes
+app.use('/api/auth', authRoutes);
+
 app.get('/api', (_req: Request, res: Response) => {
     res.status(200).json({
         status: 'success',
@@ -34,6 +38,9 @@ app.get('/api', (_req: Request, res: Response) => {
         version: '1.0.0'
     });
 });
+
+// Error handling
+app.use(errorHandler);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

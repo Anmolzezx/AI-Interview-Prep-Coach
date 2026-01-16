@@ -11,7 +11,7 @@ const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '30d';
  */
 export const generateAccessToken = (userId: string, email: string): string => {
     const payload: JWTPayload = { userId, email };
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
 };
 
 /**
@@ -19,7 +19,7 @@ export const generateAccessToken = (userId: string, email: string): string => {
  */
 export const generateRefreshToken = (userId: string, email: string): string => {
     const payload: JWTPayload = { userId, email };
-    return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN });
+    return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN } as jwt.SignOptions);
 };
 
 /**

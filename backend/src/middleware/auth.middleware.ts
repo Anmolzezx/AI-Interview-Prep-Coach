@@ -34,7 +34,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
             name: '', // We don't have name in token, but id is enough for most things
         };
 
-        next();
+        return next();
     } catch (error) {
         return res.status(401).json({
             status: 'error',

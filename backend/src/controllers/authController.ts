@@ -18,13 +18,13 @@ export const register = async (req: Request, res: Response) => {
 
         const result = await authService.registerUser(email, password, name);
 
-        res.status(201).json({
+        return res.status(201).json({
             status: 'success',
             message: 'User registered successfully',
             data: result,
         });
     } catch (error: any) {
-        res.status(400).json({
+        return res.status(400).json({
             status: 'error',
             message: error.message || 'Registration failed',
         });
@@ -47,13 +47,13 @@ export const login = async (req: Request, res: Response) => {
 
         const result = await authService.loginUser(email, password);
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             message: 'Login successful',
             data: result,
         });
     } catch (error: any) {
-        res.status(401).json({
+        return res.status(401).json({
             status: 'error',
             message: error.message || 'Login failed',
         });
@@ -76,12 +76,12 @@ export const refresh = async (req: Request, res: Response) => {
 
         const result = await authService.refreshAccessToken(refreshToken);
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             data: result,
         });
     } catch (error: any) {
-        res.status(401).json({
+        return res.status(401).json({
             status: 'error',
             message: error.message || 'Invalid refresh token',
         });
@@ -102,12 +102,12 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 
         const user = await authService.getUserById(req.user.id);
 
-        res.status(200).json({
+        return res.status(200).json({
             status: 'success',
             data: { user },
         });
     } catch (error: any) {
-        res.status(404).json({
+        return res.status(404).json({
             status: 'error',
             message: error.message || 'User not found',
         });
@@ -117,8 +117,8 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
 /**
  * Logout (client-side only for JWT, but good to have endpoint)
  */
-export const logout = async (req: Request, res: Response) => {
-    res.status(200).json({
+export const logout = async (_req: Request, res: Response) => {
+    return res.status(200).json({
         status: 'success',
         message: 'Logged out successfully',
     });
