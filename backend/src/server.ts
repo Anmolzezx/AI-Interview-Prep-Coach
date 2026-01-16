@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import prisma from './utils/prisma';
 import authRoutes from './routes/auth.routes';
+import interviewRoutes from './routes/interview.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 // Load environment variables
@@ -30,6 +31,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/interview', interviewRoutes);
 
 app.get('/api', (_req: Request, res: Response) => {
     res.status(200).json({

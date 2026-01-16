@@ -240,9 +240,9 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
         }
 
         // Calculate average score
-        const scores = session.answers.map((a) => a.score || 0);
+        const scores = session.answers.map((a: any) => a.score || 0);
         const averageScore = scores.length > 0
-            ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+            ? scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length
             : 0;
 
         // Update session
@@ -327,7 +327,7 @@ export const getSessionFeedback = async (req: AuthRequest, res: Response) => {
                     createdAt: session.createdAt,
                     completedAt: session.completedAt,
                 },
-                answers: session.answers.map((answer) => ({
+                answers: session.answers.map((answer: any) => ({
                     id: answer.id,
                     question: answer.question.question,
                     answer: answer.answer,
