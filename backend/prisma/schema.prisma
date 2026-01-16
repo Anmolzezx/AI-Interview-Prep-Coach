@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sessions  InterviewSession[]
+  resume    Resume?
+  stats     UserStats?
+
+  @@map("users")
+}
+
+model Resume {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fileName  String
+  fileUrl   String
+  skills    String[]
+  projects  Json
+  experience Json
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("resumes")
+}
+
+model Question {
+  id          String   @id @default(uuid())
+  category    String   // "behavioral", "technical", "resume-based", "company-specific"
+  difficulty  String   // "easy", "medium", "hard"
+  question    String   @db.Text
+  company     String?  // For company-specific questions
+  tags        String[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  answers     Answer[]
+
+  @@map("questions")
+}
+
+model InterviewSession {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String   // "practice", "company-specific", "resume-based", "daily-challenge"
+  company     String?
+  score       Float?
+  duration    Int?     // in seconds
+  status      String   @default("in-progress") // "in-progress", "completed", "abandoned"
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  completedAt DateTime?
+
+  // Relations
+  answers     Answer[]
+  feedback    Feedback?
+
+  @@map("interview_sessions")
+}
+
+model Answer {
+  id          String   @id @default(uuid())
+  sessionId   String
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  questionId  String
+  question    Question @relation(fields: [questionId], references: [id])
+  
+  answer      String   @db.Text
+  transcription String? @db.Text // Voice-to-text transcription
+  score       Float?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("answers")
+}
+
+model Feedback {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  overallScore     Float
+  strengths        String[] @db.Text
+  weaknesses       String[] @db.Text
+  improvements     String[] @db.Text
+  starAnalysis     Json     // STAR method analysis
+  exampleAnswers   Json     // Better answer examples
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("feedback")
+}
+
+model UserStats {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  totalSessions   Int      @default(0)
+  completedSessions Int    @default(0)
+  averageScore    Float    @default(0)
+  dailyStreak     Int      @default(0)
+  lastPracticeDate DateTime?
+  
+  // Category-wise performance
+  behavioralScore Float    @default(0)
+  technicalScore  Float    @default(0)
+  
+  // Achievements
+  badges          String[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("user_stats")
+}
+
+model DailyChallenge {
+  id          String   @id @default(uuid())
+  date        DateTime @unique @default(now())
+  questionId  String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("daily_challenges")
+}
