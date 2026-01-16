@@ -1,0 +1,167 @@
+import bcrypt from 'bcrypt';
+import prisma from '../utils/prisma';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
+import { AuthResponse, UserPayload } from '../types';
+import { sanitizeEmail, sanitizeName, isValidEmail, isValidPassword, isValidName } from '../utils/validators';
+
+const SALT_ROUNDS = 10;
+
+/**
+ * Register a new user
+ */
+export const registerUser = async (
+    email: string,
+    password: string,
+    name: string
+): Promise<AuthResponse> => {
+    // Sanitize inputs
+    const sanitizedEmail = sanitizeEmail(email);
+    const sanitizedName = sanitizeName(name);
+
+    // Validate email
+    if (!isValidEmail(sanitizedEmail)) {
+        throw new Error('Invalid email format');
+    }
+
+    // Validate password
+    const passwordValidation = isValidPassword(password);
+    if (!passwordValidation.valid) {
+        throw new Error(passwordValidation.message || 'Invalid password');
+    }
+
+    // Validate name
+    const nameValidation = isValidName(sanitizedName);
+    if (!nameValidation.valid) {
+        throw new Error(nameValidation.message || 'Invalid name');
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+        where: { email: sanitizedEmail },
+    });
+
+    if (existingUser) {
+        throw new Error('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // Create user
+    const user = await prisma.user.create({
+        data: {
+            email: sanitizedEmail,
+            password: hashedPassword,
+            name: sanitizedName,
+        },
+    });
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user.id, user.email);
+    const refreshToken = generateRefreshToken(user.id, user.email);
+
+    // Create user payload
+    const userPayload: UserPayload = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+    };
+
+    return {
+        user: userPayload,
+        accessToken,
+        refreshToken,
+    };
+};
+
+/**
+ * Login user
+ */
+export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
+    // Sanitize email
+    const sanitizedEmail = sanitizeEmail(email);
+
+    // Validate email
+    if (!isValidEmail(sanitizedEmail)) {
+        throw new Error('Invalid credentials');
+    }
+
+    // Find user
+    const user = await prisma.user.findUnique({
+        where: { email: sanitizedEmail },
+    });
+
+    if (!user) {
+        throw new Error('Invalid credentials');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+        throw new Error('Invalid credentials');
+    }
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user.id, user.email);
+    const refreshToken = generateRefreshToken(user.id, user.email);
+
+    // Create user payload
+    const userPayload: UserPayload = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+    };
+
+    return {
+        user: userPayload,
+        accessToken,
+        refreshToken,
+    };
+};
+
+/**
+ * Refresh access token
+ */
+export const refreshAccessToken = async (refreshToken: string): Promise<{ accessToken: string }> => {
+    try {
+        // Verify refresh token
+        const payload = verifyRefreshToken(refreshToken);
+
+        // Check if user still exists
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId },
+        });
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Generate new access token
+        const accessToken = generateAccessToken(user.id, user.email);
+
+        return { accessToken };
+    } catch (error) {
+        throw new Error('Invalid refresh token');
+    }
+};
+
+/**
+ * Get user by ID
+ */
+export const getUserById = async (userId: string): Promise<UserPayload> => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            email: true,
+            name: true,
+        },
+    });
+
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    return user;
+};
